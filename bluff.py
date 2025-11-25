@@ -396,6 +396,7 @@ def fetch_newsapi(topic: str = "technology", page_size: int = 6):
 
 
 # ------------ UI: replace your previous page_live_feed with this ------------
+# ------------ UI: Live Feed Page ------------
 def page_live_feed():
     st.markdown('<div class="main-card">', unsafe_allow_html=True)
     st.markdown('<h2 style="color:#67e8ff">Live Feed</h2>', unsafe_allow_html=True)
@@ -406,33 +407,23 @@ def page_live_feed():
         topic = st.text_input("Topic to search", "technology")
     with col_refresh:
         if st.button("Refresh"):
-            # clear cached fetch so fresh headlines load immediately
             try:
-                st.cache_data.clear()
-            except Exception:
+                st.cache_data.clear()  # clear cache
+            except:
                 pass
             st.experimental_rerun()
 
-    stub = st.empty()  # placeholder while loading
-    with stub.container():
-        stub.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-        stub.info("Fetching live headlines...")
-
-    # fetch articles
+    # Fetch data
     res = fetch_newsapi(topic=topic, page_size=6)
 
-    # clear placeholder
-    stub.empty()
-
     if "error" in res:
-        st.error(f"News fetch error: {res['error']}")
+        st.error(f"NewsAPI error: {res['error']}")
         st.markdown("</div>", unsafe_allow_html=True)
         return
 
     articles = res["articles"]
-
     if not articles:
-        st.info("No articles found. Try another topic or refresh.")
+        st.info("No articles found.")
         st.markdown("</div>", unsafe_allow_html=True)
         return
 
@@ -440,28 +431,29 @@ def page_live_feed():
     for i, art in enumerate(articles):
         col = cols[i % 3]
         title = art.get("title", "No title")
-        source = art.get("source", {}).get("name", "Unknown")
         desc = art.get("description") or art.get("content") or ""
-        url = art.get("url", "#")
+        source = art.get("source", {}).get("name", "Unknown")
         published = art.get("publishedAt", "")[:16]
+        url = art.get("url", "#")
 
-        # run your model on description (or title if empty)
+        # Run your ML model
         label, conf = predict_news(desc or title)
         conf_pct = round(conf * 100, 1)
-        badge_color = "#6bffdf" if label == "TRUE" else "#ff6b7a"
+        color = "#6bffdf" if label == "TRUE" else "#ff6b7a"
 
         with col:
             st.markdown(
                 f"""
                 <div class="placeholder-card">
-                  <div style="font-weight:800;color:#a8d6ff">{title}</div>
-                  <div style="color:#9fbde6;margin-top:8px">{source} • {published}</div>
-                  <div style="height:8px"></div>
-                  <div style="font-weight:700;color:{badge_color}">{label} — {conf_pct}%</div>
-                  <div style="height:8px"></div>
-                  <a href="{url}" target="_blank">Open source</a>
+                    <div style="font-weight:800;color:#a8d6ff">{title}</div>
+                    <div style="color:#9fbde6;margin-top:8px">{source} • {published}</div>
+                    <div style="height:8px"></div>
+                    <div style="font-weight:700;color:{color}">{label} — {conf_pct}%</div>
+                    <div style="height:8px"></div>
+                    <a href="{url}" target="_blank">Open source</a>
                 </div>
-                """, unsafe_allow_html=True
+                """,
+                unsafe_allow_html=True
             )
 
     st.markdown("</div>", unsafe_allow_html=True)
