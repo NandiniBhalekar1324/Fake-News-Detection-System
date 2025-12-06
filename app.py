@@ -126,23 +126,19 @@ st.markdown("""
 # --------------------------------------------------
 # SIDEBAR
 # --------------------------------------------------
-st.sidebar.image(os.path.join(ASSETS, "bluff_logo.png"), use_container_width=True)
-
-#st.sidebar.markdown("""
-#<span style='font-size:20px; font-weight:900; color:#00eaff; text-shadow:0 0 10px #00eaff;'>TRUTH<br>SCANNER 2.0</span>
-#""", unsafe_allow_html=True)
+# replaced deprecated use_container_width / width=True with width="stretch"
+st.sidebar.image(os.path.join(ASSETS, "bluff_logo.png"), width="stretch")
 
 st.sidebar.markdown("---")
 
 menu = st.sidebar.radio("Navigation", ["🏡 Home", "🔎 Detector", "📡 Live Feed", "📘 Project Info", "🕒 History"])
 
 st.sidebar.markdown("---")
-#st.sidebar.image(os.path.join(ASSETS, "future_icon.png"), width=110)
 
-
-
+# --------------------------------------------------
+# HOME
+# --------------------------------------------------
 def page_home():
-    # 🌟 NEON GLOW WELCOME TITLE
     st.markdown("""
         <h1 style='
             text-align:center;
@@ -171,41 +167,20 @@ def page_home():
         </p>
     """, unsafe_allow_html=True)
 
-    # 🔵 BANNER SECTION (GIF / MP4) — SMALL SIZE
-    
-    # 🔵 BANNER SECTION (GIF / MP4) — MEDIUM/LARGE SIZE
     banner_path = os.path.join(ASSETS, "banner.gif")
     banner_mp4 = os.path.join(ASSETS, "banner.mp4")
 
-    st.markdown(
-        "<div style='text-align:center; margin-top:15px;'>",
-        unsafe_allow_html=True
-    )
+    st.markdown("<div style='text-align:center; margin-top:15px;'>", unsafe_allow_html=True)
 
-# GIF (preferred)
     if os.path.exists(banner_path):
         st.image(banner_path, width=1100)
-
-# MP4 fallback
     elif os.path.exists(banner_mp4):
         st.video(banner_mp4)
-        st.markdown("""
-            <style>
-            video {
-                width: 1100px !important;
-                border-radius: 18px;
-                box-shadow: 0 0 25px rgba(0, 195, 255, 0.25);
-            }
-            </style>
-        """, unsafe_allow_html=True)
-
     else:
         st.warning("Banner not found (banner.gif or banner.mp4)")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-
-    # 🧊 Stats Section
     st.markdown('<div class="main-card" style="margin-top:18px">', unsafe_allow_html=True)
 
     col1, col2, col3, col4 = st.columns(4)
@@ -215,8 +190,6 @@ def page_home():
     col4.markdown('<div class="stat-card"><div class="stat-number">~0.6s</div><div class="stat-label">Latency</div></div>', unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
-
-
 
 # --------------------------------------------------
 # DETECTOR PAGE
@@ -230,7 +203,13 @@ def page_detector():
 
     with col1:
         st.markdown("<label style='color:#cfeeff;font-weight:700;'>Paste News Article</label>", unsafe_allow_html=True)
-        text = st.text_area("", height=300, placeholder="Paste full article...")
+        text = st.text_area(
+            "News Article",
+            height=300,
+            placeholder="Paste full article...",
+            label_visibility="collapsed"
+        )
+
 
         if st.button("ANALYZE ARTICLE"):
             if len(text.strip()) < 20:
@@ -257,7 +236,7 @@ def page_detector():
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --------------------------------------------------
-# LIVE FEED
+# LIVE FEED (includes fetch function)
 # --------------------------------------------------
 @st.cache_data(ttl=300)
 def fetch_newsapi(topic="technology", page_size=6):
@@ -266,8 +245,13 @@ def fetch_newsapi(topic="technology", page_size=6):
         return {"error": "NEWSAPI_KEY missing."}
 
     url = "https://newsapi.org/v2/everything"
-    params = {"q": topic, "pageSize": page_size, "language": "en",
-              "sortBy": "publishedAt", "apiKey": api_key}
+    params = {
+        "q": topic,
+        "pageSize": page_size,
+        "language": "en",
+        "sortBy": "publishedAt",
+        "apiKey": api_key
+    }
 
     try:
         r = requests.get(url, params=params, timeout=8)
@@ -283,17 +267,23 @@ def page_live_feed():
     col1, col2 = st.columns([4,1])
     topic = col1.text_input("Search Topic", "technology")
 
+    # Refresh button
     if col2.button("Refresh"):
         st.cache_data.clear()
-        st.experimental_rerun()
+        st.session_state["refresh"] = True
 
+    # Trigger safe rerun
+    if st.session_state.get("refresh"):
+        st.session_state["refresh"] = False
+        st.rerun()
+
+    # Fetch news
     res = fetch_newsapi(topic)
     if "error" in res:
         st.error(res["error"])
         return
 
     cols = st.columns(3)
-
     for i, art in enumerate(res["articles"]):
         col = cols[i % 3]
 
@@ -388,9 +378,10 @@ def page_history():
     if col2.button("Clear History"):
         df = df.iloc[0:0]
         df.to_csv(HISTORY_CSV, index=False)
-        st.experimental_rerun()
+        # use st.rerun() (safe)
+        st.rerun()
 
-    st.dataframe(df.sort_values(by="timestamp", ascending=False), use_container_width=True)
+    st.dataframe(df.sort_values(by="timestamp", ascending=False), width="stretch")
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --------------------------------------------------
