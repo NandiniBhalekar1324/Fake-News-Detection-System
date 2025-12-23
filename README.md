@@ -1,6 +1,6 @@
 
-<video src="newsdemo.mp4" width="100%" controls>
-</video>
+
+
 
 <h1 align="center">📰 BLUFF — Fake News Detection System</h1>
 
@@ -101,3 +101,10 @@ streamlit run app.py
 <hr>
 
 <h3 align="center">⭐ If you like this project, consider giving it a star on GitHub!</h3>
+
+
+
+https://github.com/user-attachments/assets/bbec663b-1e47-49a1-8b35-b464a3048144
+
+
+
