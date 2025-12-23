@@ -1,3 +1,7 @@
+
+<video src="newsdemo.mp4" width="100%" controls>
+</video>
+
 <h1 align="center">📰 BLUFF — Fake News Detection System</h1>
 
 <p align="center">
